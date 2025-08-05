@@ -621,9 +621,52 @@ class PatchGame {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
             this.ctx.fillStyle = '#00d4aa';
-            this.ctx.font = '36px Courier New';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('SNYK PATCHMAN', this.canvas.width/2, this.canvas.height/2 - 40);
+            
+            // Draw "SNYK PA" in large font
+            this.ctx.font = '36px Courier New';
+            const largeText = 'SNYK PA';
+            const largeTextWidth = this.ctx.measureText(largeText).width;
+            
+            // Draw "T" in tiny font
+            this.ctx.font = '12px Courier New';
+            const tinyT = 'T';
+            const tinyTWidth = this.ctx.measureText(tinyT).width;
+            
+            // Draw "C" in large font
+            this.ctx.font = '36px Courier New';
+            const midText = 'C';
+            const midTextWidth = this.ctx.measureText(midText).width;
+            
+            // Draw "H" in tiny font  
+            this.ctx.font = '12px Courier New';
+            const tinyH = 'H';
+            const tinyHWidth = this.ctx.measureText(tinyH).width;
+            
+            // Draw "MAN" in large font
+            this.ctx.font = '36px Courier New';
+            const endText = 'MAN';
+            const endTextWidth = this.ctx.measureText(endText).width;
+            
+            // Calculate total width for centering
+            const totalWidth = largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth + endTextWidth;
+            const startX = this.canvas.width/2 - totalWidth/2;
+            
+            // Draw each part
+            this.ctx.font = '36px Courier New';
+            this.ctx.fillText(largeText, startX + largeTextWidth/2, this.canvas.height/2 - 40);
+            
+            this.ctx.font = '12px Courier New';
+            this.ctx.fillText(tinyT, startX + largeTextWidth + tinyTWidth/2, this.canvas.height/2 - 35);
+            
+            this.ctx.font = '36px Courier New';
+            this.ctx.fillText(midText, startX + largeTextWidth + tinyTWidth + midTextWidth/2, this.canvas.height/2 - 40);
+            
+            this.ctx.font = '12px Courier New';
+            this.ctx.fillText(tinyH, startX + largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth/2, this.canvas.height/2 - 35);
+            
+            this.ctx.font = '36px Courier New';
+            this.ctx.fillText(endText, startX + largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth + endTextWidth/2, this.canvas.height/2 - 40);
             
             this.ctx.fillStyle = '#fff';
             this.ctx.font = '18px Courier New';

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snyk Patch - Vulnerability Hunter</title>
+    <title>PatchMan - Vulnerability Hunter</title>
     <style>
         body {
             margin: 0;
@@ -27,6 +27,16 @@
             color: #00d4aa;
             margin: 0;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .patch-logo {
+            width: 50px;
+            height: 50px;
+            image-rendering: pixelated;
         }
         
         .game-subtitle {
@@ -71,7 +81,11 @@
 </head>
 <body>
     <div class="game-header">
-        <h1 class="game-title">🐕 SNYK PATCH</h1>
+        <h1 class="game-title">
+            <img src="patch_profile.png" alt="Patch" class="patch-logo">
+            PATCHMAN
+            <img src="patch_profile.png" alt="Patch" class="patch-logo" style="transform: scaleX(-1);">
+        </h1>
         <p class="game-subtitle">Vulnerability Hunter</p>
     </div>
     

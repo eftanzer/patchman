@@ -10,6 +10,15 @@ class PatchGame {
         this.rows = this.canvas.height / this.gridSize;
         this.cols = this.canvas.width / this.gridSize;
         
+        // Load Patch sprite image
+        this.patchImage = new Image();
+        this.patchImage.src = 'patch_profile.png';
+        this.imageLoaded = false;
+        
+        this.patchImage.onload = () => {
+            this.imageLoaded = true;
+        };
+        
         // Game state
         this.score = 0;
         this.vulnerabilitiesRemaining = 0;
@@ -20,7 +29,8 @@ class PatchGame {
             x: 1,
             y: 1,
             direction: 'right',
-            nextDirection: null
+            nextDirection: null,
+            horizontalOrientation: 'right' // Track last horizontal direction for sprite orientation
         };
         
         // Maze layout (1 = wall, 0 = path, 2 = vulnerability dot)
@@ -33,13 +43,13 @@ class PatchGame {
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
             [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
-            [1,1,1,1,2,1,1,1,0,1,1,0,1,1,1,2,1,1,1,1],
-            [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
-            [1,1,1,1,2,1,0,1,1,0,0,1,1,0,1,2,1,1,1,1],
-            [2,2,2,2,2,0,0,1,0,0,0,0,1,0,0,2,2,2,2,2],
-            [1,1,1,1,2,1,0,1,1,1,1,1,1,0,1,2,1,1,1,1],
-            [0,0,0,1,2,1,0,0,0,0,0,0,0,0,1,2,1,0,0,0],
-            [1,1,1,1,2,1,1,1,0,1,1,0,1,1,1,2,1,1,1,1],
+            [1,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,1,1],
+            [0,0,0,1,2,1,2,2,2,2,2,2,2,2,1,2,1,0,0,0],
+            [1,1,1,1,2,1,2,1,1,0,0,1,1,2,1,2,1,1,1,1],
+            [2,2,2,2,2,2,2,1,0,0,0,0,1,2,2,2,2,2,2,2],
+            [1,1,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,1,1],
+            [0,0,0,1,2,1,2,2,2,2,2,2,2,2,1,2,1,0,0,0],
+            [1,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,1,1],
             [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
@@ -106,19 +116,30 @@ class PatchGame {
         this.player.y = 1;
         this.player.direction = 'right';
         this.player.nextDirection = null;
+        this.player.horizontalOrientation = 'right';
         
-        // Reset maze vulnerabilities
-        for (let row = 0; row < this.maze.length; row++) {
-            for (let col = 0; col < this.maze[row].length; col++) {
-                if (this.maze[row][col] === 0 && row > 0 && row < this.maze.length - 1 && 
-                    col > 0 && col < this.maze[row].length - 1) {
-                    // Add some vulnerabilities back to empty paths
-                    if (Math.random() < 0.3) {
-                        this.maze[row][col] = 2;
-                    }
-                }
-            }
-        }
+        // Reset maze vulnerabilities to original state
+        this.maze = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
+            [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
+            [1,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,1,1],
+            [0,0,0,1,2,1,2,2,2,2,2,2,2,2,1,2,1,0,0,0],
+            [1,1,1,1,2,1,2,1,1,0,0,1,1,2,1,2,1,1,1,1],
+            [2,2,2,2,2,2,2,1,0,0,0,0,1,2,2,2,2,2,2,2],
+            [1,1,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,1,1],
+            [0,0,0,1,2,1,2,2,2,2,2,2,2,2,1,2,1,0,0,0],
+            [1,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,1,1],
+            [1,2,2,2,2,1,2,2,2,1,1,2,2,2,1,2,2,2,2,1],
+            [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
         
         this.countVulnerabilities();
         this.updateUI();
@@ -149,6 +170,11 @@ class PatchGame {
             if (this.canMove(newX, newY)) {
                 this.player.direction = this.player.nextDirection;
                 this.player.nextDirection = null;
+                
+                // Update horizontal orientation only for left/right movement
+                if (this.player.direction === 'left' || this.player.direction === 'right') {
+                    this.player.horizontalOrientation = this.player.direction;
+                }
             }
         }
         
@@ -219,59 +245,44 @@ class PatchGame {
     }
     
     drawPlayer() {
+        if (!this.imageLoaded) {
+            // Fallback to simple circle if image hasn't loaded yet
+            const x = this.player.x * this.gridSize;
+            const y = this.player.y * this.gridSize;
+            this.ctx.fillStyle = '#f39c12';
+            this.ctx.beginPath();
+            this.ctx.arc(x + this.gridSize/2, y + this.gridSize/2, this.gridSize/3, 0, Math.PI * 2);
+            this.ctx.fill();
+            return;
+        }
+        
         const x = this.player.x * this.gridSize;
         const y = this.player.y * this.gridSize;
         
-        // Draw Patch (Snyk dog) as a stylized dog face
-        this.ctx.fillStyle = '#f39c12';
+        // Save the current context state
+        this.ctx.save();
         
-        // Main head circle
-        this.ctx.beginPath();
-        this.ctx.arc(x + this.gridSize/2, y + this.gridSize/2, this.gridSize/3, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Move to the center of the grid cell
+        this.ctx.translate(x + this.gridSize/2, y + this.gridSize/2);
         
-        // Ears
-        this.ctx.fillStyle = '#e67e22';
-        this.ctx.beginPath();
-        this.ctx.arc(x + this.gridSize/3, y + this.gridSize/3, this.gridSize/6, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.beginPath();
-        this.ctx.arc(x + 2*this.gridSize/3, y + this.gridSize/3, this.gridSize/6, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Eyes
-        this.ctx.fillStyle = '#2c3e50';
-        this.ctx.beginPath();
-        this.ctx.arc(x + this.gridSize/2 - 3, y + this.gridSize/2 - 2, 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.beginPath();
-        this.ctx.arc(x + this.gridSize/2 + 3, y + this.gridSize/2 - 2, 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Nose
-        this.ctx.fillStyle = '#34495e';
-        this.ctx.beginPath();
-        this.ctx.arc(x + this.gridSize/2, y + this.gridSize/2 + 2, 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Direction indicator (mouth/snout direction)
-        this.ctx.fillStyle = '#27ae60';
-        this.ctx.beginPath();
-        switch(this.player.direction) {
-            case 'right':
-                this.ctx.arc(x + 2*this.gridSize/3, y + this.gridSize/2, 2, 0, Math.PI * 2);
-                break;
-            case 'left':
-                this.ctx.arc(x + this.gridSize/3, y + this.gridSize/2, 2, 0, Math.PI * 2);
-                break;
-            case 'up':
-                this.ctx.arc(x + this.gridSize/2, y + this.gridSize/3, 2, 0, Math.PI * 2);
-                break;
-            case 'down':
-                this.ctx.arc(x + this.gridSize/2, y + 2*this.gridSize/3, 2, 0, Math.PI * 2);
-                break;
+        // Flip horizontally if facing right (image faces left by default)
+        // Use horizontalOrientation to maintain facing direction when moving up/down
+        if (this.player.horizontalOrientation === 'right') {
+            this.ctx.scale(-1, 1);
         }
-        this.ctx.fill();
+        
+        // Draw the image centered in the grid cell
+        const imageSize = this.gridSize * 0.8; // Make it slightly smaller than the grid cell
+        this.ctx.drawImage(
+            this.patchImage, 
+            -imageSize/2, 
+            -imageSize/2, 
+            imageSize, 
+            imageSize
+        );
+        
+        // Restore the context state
+        this.ctx.restore();
     }
     
     draw() {

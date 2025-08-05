@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snyk Patch - Vulnerability Hunter</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-title {
+            font-size: 2.5em;
+            color: #00d4aa;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-subtitle {
+            font-size: 1.2em;
+            color: #16213e;
+            margin: 5px 0;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 600px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .score {
+            color: #00d4aa;
+        }
+        
+        .vulnerabilities {
+            color: #ff6b6b;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #00d4aa;
+            border-radius: 10px;
+            background: #0f0f23;
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+            color: #888;
+        }
+        
+        .controls p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <h1 class="game-title">🐕 SNYK PATCH</h1>
+        <p class="game-subtitle">Vulnerability Hunter</p>
+    </div>
+    
+    <div class="game-info">
+        <div class="score">Score: <span id="scoreValue">0</span></div>
+        <div class="vulnerabilities">Vulnerabilities: <span id="vulnCount">0</span></div>
+    </div>
+    
+    <canvas id="gameCanvas" width="600" height="600"></canvas>
+    
+    <div class="controls">
+        <p>Use ARROW KEYS or WASD to move Patch</p>
+        <p>Collect 🔴 vulnerabilities to remediate them!</p>
+        <p>Press SPACE to start/restart</p>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

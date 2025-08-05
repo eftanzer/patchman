@@ -623,7 +623,7 @@ class PatchGame {
             this.ctx.fillStyle = '#00d4aa';
             this.ctx.font = '36px Courier New';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('SNYK PATCH', this.canvas.width/2, this.canvas.height/2 - 40);
+            this.ctx.fillText('SNYK PATCHMAN', this.canvas.width/2, this.canvas.height/2 - 40);
             
             this.ctx.fillStyle = '#fff';
             this.ctx.font = '18px Courier New';

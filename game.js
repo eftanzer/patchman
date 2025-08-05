@@ -19,11 +19,27 @@ class PatchGame {
             this.imageLoaded = true;
         };
         
+        // Load power-up images
+        this.powerUpImages = {};
+        this.powerUpImagesLoaded = 0;
+        const powerUpFiles = ['os.png', 'code.png', 'container.png', 'iac.png'];
+        
+        powerUpFiles.forEach(file => {
+            const img = new Image();
+            img.src = file;
+            img.onload = () => {
+                this.powerUpImagesLoaded++;
+            };
+            this.powerUpImages[file.split('.')[0]] = img;
+        });
+        
         // Game state
         this.score = 0;
         this.vulnerabilitiesRemaining = 0;
         this.gameRunning = false;
         this.gameStartTime = 0;
+        this.ghostsVulnerable = false;
+        this.vulnerableTimeLeft = 0;
         
         // Player (Patch)
         this.player = {
@@ -74,12 +90,12 @@ class PatchGame {
             }
         ];
         
-        // Maze layout (1 = wall, 0 = path, 2 = vulnerability dot)
+        // Maze layout (1 = wall, 0 = path, 2 = vulnerability dot, 3 = power-up)
         // Classic Pacman-style maze - smaller and simpler
         // Central area kept open for future ghost spawn point
         this.maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
             [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
@@ -95,7 +111,7 @@ class PatchGame {
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,3,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
         
@@ -171,7 +187,7 @@ class PatchGame {
         // Reset maze vulnerabilities to original state
         this.maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,3,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
             [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
@@ -187,7 +203,7 @@ class PatchGame {
             [1,2,1,1,2,1,2,1,1,1,1,1,1,2,1,2,1,1,2,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,1],
+            [1,3,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
         
@@ -259,6 +275,13 @@ class PatchGame {
                         alert('Congratulations! All vulnerabilities have been remediated!');
                     }, 100);
                 }
+            }
+            
+            // Check for power-up collection
+            if (this.maze[newY][newX] === 3) {
+                this.maze[newY][newX] = 0; // Remove power-up
+                this.score += 50;
+                this.activatePowerUp();
             }
         }
         
@@ -367,13 +390,51 @@ class PatchGame {
         return opposites[direction];
     }
     
+    activatePowerUp() {
+        this.ghostsVulnerable = true;
+        this.vulnerableTimeLeft = 10000; // 10 seconds
+        
+        // Reset all ghosts' eaten state
+        this.ghosts.forEach(ghost => {
+            ghost.eaten = false;
+        });
+    }
+    
+    updatePowerUpTimer() {
+        if (this.ghostsVulnerable && this.vulnerableTimeLeft > 0) {
+            this.vulnerableTimeLeft -= 150; // Decrease by game loop interval
+            
+            if (this.vulnerableTimeLeft <= 0) {
+                this.ghostsVulnerable = false;
+                // Restore eaten ghosts to home
+                this.ghosts.forEach(ghost => {
+                    if (ghost.eaten) {
+                        ghost.eaten = false;
+                        // Reset to home position
+                        const homePositions = [{x: 9, y: 9}, {x: 10, y: 9}, {x: 8, y: 9}, {x: 11, y: 9}];
+                        const index = this.ghosts.indexOf(ghost);
+                        ghost.x = homePositions[index].x;
+                        ghost.y = homePositions[index].y;
+                    }
+                });
+            }
+        }
+    }
+    
     checkGhostCollisions() {
         this.ghosts.forEach(ghost => {
-            if (ghost.x === this.player.x && ghost.y === this.player.y) {
-                this.gameRunning = false;
-                setTimeout(() => {
-                    alert(`Game Over! Patch was caught by ${ghost.name}!`);
-                }, 100);
+            if (ghost.x === this.player.x && ghost.y === this.player.y && !ghost.eaten) {
+                if (this.ghostsVulnerable) {
+                    // Eat the ghost
+                    ghost.eaten = true;
+                    this.score += 200;
+                } else {
+                    // Game over
+                    this.gameRunning = false;
+                    setTimeout(() => {
+                        alert(`Game Over! Patch was caught by ${ghost.name}!`);
+                    }, 100);
+                }
             }
         });
     }
@@ -402,8 +463,43 @@ class PatchGame {
                         this.ctx.arc(x + this.gridSize/2, y + this.gridSize/2, 3, 0, Math.PI * 2);
                         this.ctx.fill();
                         break;
+                    case 3: // Power-up
+                        this.drawPowerUp(x, y, row, col);
+                        break;
                 }
             }
+        }
+    }
+    
+    drawPowerUp(x, y, row, col) {
+        if (this.powerUpImagesLoaded < 4) {
+            // Fallback: draw large yellow circle if images not loaded
+            this.ctx.fillStyle = '#ffeb3b';
+            this.ctx.beginPath();
+            this.ctx.arc(x + this.gridSize/2, y + this.gridSize/2, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+            return;
+        }
+        
+        // Determine which power-up based on position
+        let powerUpType;
+        if (row === 1 && col === 18) {
+            powerUpType = 'os'; // Upper right
+        } else if (row === 17 && col === 1) {
+            powerUpType = 'code'; // Lower left  
+        } else if (row === 17 && col === 18) {
+            powerUpType = 'iac'; // Lower right
+        } else {
+            powerUpType = 'container'; // Default fallback
+        }
+        
+        const img = this.powerUpImages[powerUpType];
+        if (img && img.complete) {
+            const size = this.gridSize * 0.6;
+            this.ctx.drawImage(img, 
+                x + (this.gridSize - size) / 2, 
+                y + (this.gridSize - size) / 2, 
+                size, size);
         }
     }
     
@@ -450,6 +546,8 @@ class PatchGame {
     
     drawGhosts() {
         this.ghosts.forEach(ghost => {
+            if (ghost.eaten) return; // Don't draw eaten ghosts
+            
             const x = ghost.x * this.gridSize;
             const y = ghost.y * this.gridSize;
             const centerX = x + this.gridSize/2;
@@ -457,7 +555,8 @@ class PatchGame {
             const radius = this.gridSize * 0.35;
             
             // Draw ghost body - rounded top with wavy bottom
-            this.ctx.fillStyle = ghost.color;
+            // Blue when vulnerable, normal color otherwise
+            this.ctx.fillStyle = this.ghostsVulnerable ? '#4169E1' : ghost.color;
             this.ctx.beginPath();
             
             // Top rounded part (semicircle)
@@ -536,6 +635,7 @@ class PatchGame {
     gameLoop() {
         this.updatePlayer();
         this.updateGhosts();
+        this.updatePowerUpTimer();
         this.draw();
         
         setTimeout(() => {

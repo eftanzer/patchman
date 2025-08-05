@@ -94,17 +94,10 @@
             color: #ccc;
         }
         
-        .ghost-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 1px solid #666;
+        .ghost-icon {
+            width: 16px;
+            height: 16px;
         }
-        
-        .ghost-red { background-color: #ff4757; }
-        .ghost-pink { background-color: #ff6b9d; }
-        .ghost-orange { background-color: #ffa726; }
-        .ghost-cyan { background-color: #26c6da; }
     </style>
 </head>
 <body>
@@ -132,19 +125,19 @@
     
     <div class="threat-legend">
         <div class="threat-item">
-            <div class="ghost-color ghost-red"></div>
+            <canvas class="ghost-icon" data-color="#ff4757"></canvas>
             <span>Prompt Injection</span>
         </div>
         <div class="threat-item">
-            <div class="ghost-color ghost-pink"></div>
+            <canvas class="ghost-icon" data-color="#ff6b9d"></canvas>
             <span>Supply Chain</span>
         </div>
         <div class="threat-item">
-            <div class="ghost-color ghost-orange"></div>
+            <canvas class="ghost-icon" data-color="#ffa726"></canvas>
             <span>Data & Model Poisoning</span>
         </div>
         <div class="threat-item">
-            <div class="ghost-color ghost-cyan"></div>
+            <canvas class="ghost-icon" data-color="#26c6da"></canvas>
             <span>System Prompt Leakage</span>
         </div>
     </div>

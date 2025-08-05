@@ -285,7 +285,7 @@ class PatchGame {
                 return; // Skip every 5th frame (move 4 out of 5 frames)
             }
             
-            // Simple AI: move toward player
+            // Improved AI: fluid movement with smart pathfinding
             const directions = ['up', 'down', 'left', 'right'];
             const possibleMoves = [];
             
@@ -311,27 +311,60 @@ class PatchGame {
             });
             
             if (possibleMoves.length > 0) {
-                // Choose move closest to player
-                let bestMove = possibleMoves[0];
-                let bestDistance = this.getDistance(bestMove.x, bestMove.y, this.player.x, this.player.y);
+                let chosenMove;
                 
-                possibleMoves.forEach(move => {
-                    const distance = this.getDistance(move.x, move.y, this.player.x, this.player.y);
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        bestMove = move;
+                // Prefer to continue in current direction if possible
+                const continueMove = possibleMoves.find(move => move.direction === ghost.direction);
+                
+                if (continueMove && possibleMoves.length > 1) {
+                    // 70% chance to continue current direction for fluid movement
+                    if (Math.random() < 0.7) {
+                        chosenMove = continueMove;
                     }
-                });
+                }
                 
-                ghost.x = bestMove.x;
-                ghost.y = bestMove.y;
-                ghost.direction = bestMove.direction;
+                if (!chosenMove) {
+                    // Choose move toward player, but avoid reversing direction unless no choice
+                    const oppositeDirection = this.getOppositeDirection(ghost.direction);
+                    let filteredMoves = possibleMoves.filter(move => move.direction !== oppositeDirection);
+                    
+                    // If no non-reverse moves available, allow any move
+                    if (filteredMoves.length === 0) {
+                        filteredMoves = possibleMoves;
+                    }
+                    
+                    // Find best move toward player from filtered moves
+                    chosenMove = filteredMoves[0];
+                    let bestDistance = this.getDistance(chosenMove.x, chosenMove.y, this.player.x, this.player.y);
+                    
+                    filteredMoves.forEach(move => {
+                        const distance = this.getDistance(move.x, move.y, this.player.x, this.player.y);
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            chosenMove = move;
+                        }
+                    });
+                }
+                
+                ghost.x = chosenMove.x;
+                ghost.y = chosenMove.y;
+                ghost.direction = chosenMove.direction;
             }
         });
     }
     
     getDistance(x1, y1, x2, y2) {
         return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+    
+    getOppositeDirection(direction) {
+        const opposites = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        };
+        return opposites[direction];
     }
     
     checkGhostCollisions() {
@@ -511,7 +544,75 @@ class PatchGame {
     }
 }
 
+// Draw mini ghost icons in the legend
+function drawLegendGhosts() {
+    const ghostIcons = document.querySelectorAll('.ghost-icon');
+    
+    ghostIcons.forEach(canvas => {
+        const ctx = canvas.getContext('2d');
+        const color = canvas.getAttribute('data-color');
+        
+        // Set canvas actual size
+        canvas.width = 16;
+        canvas.height = 16;
+        
+        const centerX = 8;
+        const centerY = 8;
+        const radius = 6;
+        
+        // Draw mini ghost body - rounded top with wavy bottom
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        
+        // Top rounded part (semicircle)
+        ctx.arc(centerX, centerY - radius/3, radius, Math.PI, 0, false);
+        
+        // Straight sides down
+        ctx.lineTo(centerX + radius, centerY + radius/2);
+        
+        // Wavy bottom - create 3 small waves
+        const waveWidth = radius * 2 / 3;
+        const waveHeight = radius / 4;
+        
+        // First wave (right)
+        ctx.lineTo(centerX + radius - waveWidth/3, centerY + radius/2 + waveHeight);
+        ctx.lineTo(centerX + radius - waveWidth*2/3, centerY + radius/2);
+        
+        // Second wave (middle)
+        ctx.lineTo(centerX, centerY + radius/2 + waveHeight);
+        
+        // Third wave (left)
+        ctx.lineTo(centerX - radius + waveWidth*2/3, centerY + radius/2);
+        ctx.lineTo(centerX - radius + waveWidth/3, centerY + radius/2 + waveHeight);
+        
+        // Complete left side
+        ctx.lineTo(centerX - radius, centerY + radius/2);
+        
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw mini ghost eyes
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(centerX - radius/2.5, centerY - radius/3, radius/5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX + radius/2.5, centerY - radius/3, radius/5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw mini ghost pupils
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(centerX - radius/2.5, centerY - radius/3, radius/8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX + radius/2.5, centerY - radius/3, radius/8, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}
+
 // Start the game when page loads
 window.addEventListener('load', () => {
+    drawLegendGhosts();
     new PatchGame();
 });

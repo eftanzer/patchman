@@ -77,6 +77,34 @@
         .controls p {
             margin: 5px 0;
         }
+        
+        .threat-legend {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            font-size: 0.9em;
+        }
+        
+        .threat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ccc;
+        }
+        
+        .ghost-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #666;
+        }
+        
+        .ghost-red { background-color: #ff4757; }
+        .ghost-pink { background-color: #ff6b9d; }
+        .ghost-orange { background-color: #ffa726; }
+        .ghost-cyan { background-color: #26c6da; }
     </style>
 </head>
 <body>
@@ -99,7 +127,26 @@
     <div class="controls">
         <p>Use ARROW KEYS or WASD to move Patch</p>
         <p>Collect 🔴 vulnerabilities to remediate them!</p>
-        <p>Press SPACE to start/restart</p>
+        <p>Avoid the security threats! Press SPACE to start/restart</p>
+    </div>
+    
+    <div class="threat-legend">
+        <div class="threat-item">
+            <div class="ghost-color ghost-red"></div>
+            <span>Prompt Injection</span>
+        </div>
+        <div class="threat-item">
+            <div class="ghost-color ghost-pink"></div>
+            <span>Supply Chain</span>
+        </div>
+        <div class="threat-item">
+            <div class="ghost-color ghost-orange"></div>
+            <span>Data & Model Poisoning</span>
+        </div>
+        <div class="threat-item">
+            <div class="ghost-color ghost-cyan"></div>
+            <span>System Prompt Leakage</span>
+        </div>
     </div>
     
     <script src="game.js"></script>

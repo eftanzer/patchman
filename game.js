@@ -23,6 +23,7 @@ class PatchGame {
         this.score = 0;
         this.vulnerabilitiesRemaining = 0;
         this.gameRunning = false;
+        this.gameStartTime = 0;
         
         // Player (Patch)
         this.player = {
@@ -32,6 +33,46 @@ class PatchGame {
             nextDirection: null,
             horizontalOrientation: 'right' // Track last horizontal direction for sprite orientation
         };
+        
+        // Ghosts (Security Threats) - positioned with staggered activation times
+        this.ghosts = [
+            {
+                id: 'prompt-injection',
+                x: 9, y: 9,  // row 9, column 9
+                direction: 'up',
+                color: '#ff4757',
+                name: 'Prompt Injection',
+                moveCounter: 0,
+                activationTime: 5000  // 5 seconds
+            },
+            {
+                id: 'supply-chain',
+                x: 10, y: 9,  // row 9, column 10
+                direction: 'left',
+                color: '#ff6b9d',
+                name: 'Supply Chain',
+                moveCounter: 0,
+                activationTime: 8000  // 8 seconds
+            },
+            {
+                id: 'data-poisoning',
+                x: 8, y: 9,  // row 9, column 8
+                direction: 'right',
+                color: '#ffa726',
+                name: 'Data & Model Poisoning',
+                moveCounter: 0,
+                activationTime: 11000  // 11 seconds
+            },
+            {
+                id: 'prompt-leakage',
+                x: 11, y: 9,  // row 9, column 11
+                direction: 'down',
+                color: '#26c6da',
+                name: 'System Prompt Leakage',
+                moveCounter: 0,
+                activationTime: 14000  // 14 seconds
+            }
+        ];
         
         // Maze layout (1 = wall, 0 = path, 2 = vulnerability dot)
         // Classic Pacman-style maze - smaller and simpler
@@ -112,11 +153,20 @@ class PatchGame {
     startGame() {
         this.gameRunning = true;
         this.score = 0;
+        this.gameStartTime = Date.now();
+        
+        // Reset player
         this.player.x = 1;
         this.player.y = 1;
         this.player.direction = 'right';
         this.player.nextDirection = null;
         this.player.horizontalOrientation = 'right';
+        
+        // Reset ghosts to home positions with staggered activation
+        this.ghosts[0].x = 9; this.ghosts[0].y = 9; this.ghosts[0].direction = 'up'; this.ghosts[0].moveCounter = 0;    // row 9, col 9 - 5 seconds
+        this.ghosts[1].x = 10; this.ghosts[1].y = 9; this.ghosts[1].direction = 'left'; this.ghosts[1].moveCounter = 0; // row 9, col 10 - 8 seconds
+        this.ghosts[2].x = 8; this.ghosts[2].y = 9; this.ghosts[2].direction = 'right'; this.ghosts[2].moveCounter = 0; // row 9, col 8 - 11 seconds
+        this.ghosts[3].x = 11; this.ghosts[3].y = 9; this.ghosts[3].direction = 'down'; this.ghosts[3].moveCounter = 0; // row 9, col 11 - 14 seconds
         
         // Reset maze vulnerabilities to original state
         this.maze = [
@@ -213,6 +263,86 @@ class PatchGame {
         }
         
         this.updateUI();
+        
+        // Check collision with ghosts
+        this.checkGhostCollisions();
+    }
+    
+    updateGhosts() {
+        if (!this.gameRunning) return;
+        
+        const currentTime = Date.now() - this.gameStartTime;
+        
+        this.ghosts.forEach(ghost => {
+            // Check if this ghost should be active based on its activation time
+            if (currentTime < ghost.activationTime) {
+                return; // Ghost not yet active
+            }
+            
+            // Ghosts move at 80% speed of Patch (skip every 5th frame)
+            ghost.moveCounter++;
+            if (ghost.moveCounter % 5 === 0) {
+                return; // Skip every 5th frame (move 4 out of 5 frames)
+            }
+            
+            // Simple AI: move toward player
+            const directions = ['up', 'down', 'left', 'right'];
+            const possibleMoves = [];
+            
+            // Check all possible directions
+            directions.forEach(dir => {
+                let newX = ghost.x;
+                let newY = ghost.y;
+                
+                switch(dir) {
+                    case 'up': newY--; break;
+                    case 'down': newY++; break;
+                    case 'left': newX--; break;
+                    case 'right': newX++; break;
+                }
+                
+                // Handle screen wrapping
+                if (newX < 0) newX = this.cols - 1;
+                if (newX >= this.cols) newX = 0;
+                
+                if (this.canMove(newX, newY)) {
+                    possibleMoves.push({direction: dir, x: newX, y: newY});
+                }
+            });
+            
+            if (possibleMoves.length > 0) {
+                // Choose move closest to player
+                let bestMove = possibleMoves[0];
+                let bestDistance = this.getDistance(bestMove.x, bestMove.y, this.player.x, this.player.y);
+                
+                possibleMoves.forEach(move => {
+                    const distance = this.getDistance(move.x, move.y, this.player.x, this.player.y);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestMove = move;
+                    }
+                });
+                
+                ghost.x = bestMove.x;
+                ghost.y = bestMove.y;
+                ghost.direction = bestMove.direction;
+            }
+        });
+    }
+    
+    getDistance(x1, y1, x2, y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+    
+    checkGhostCollisions() {
+        this.ghosts.forEach(ghost => {
+            if (ghost.x === this.player.x && ghost.y === this.player.y) {
+                this.gameRunning = false;
+                setTimeout(() => {
+                    alert(`Game Over! Patch was caught by ${ghost.name}!`);
+                }, 100);
+            }
+        });
     }
     
     updateUI() {
@@ -285,12 +415,72 @@ class PatchGame {
         this.ctx.restore();
     }
     
+    drawGhosts() {
+        this.ghosts.forEach(ghost => {
+            const x = ghost.x * this.gridSize;
+            const y = ghost.y * this.gridSize;
+            const centerX = x + this.gridSize/2;
+            const centerY = y + this.gridSize/2;
+            const radius = this.gridSize * 0.35;
+            
+            // Draw ghost body - rounded top with wavy bottom
+            this.ctx.fillStyle = ghost.color;
+            this.ctx.beginPath();
+            
+            // Top rounded part (semicircle)
+            this.ctx.arc(centerX, centerY - radius/3, radius, Math.PI, 0, false);
+            
+            // Straight sides down
+            this.ctx.lineTo(centerX + radius, centerY + radius/2);
+            
+            // Wavy bottom - create 3 small waves
+            const waveWidth = radius * 2 / 3;
+            const waveHeight = radius / 4;
+            
+            // First wave (right)
+            this.ctx.lineTo(centerX + radius - waveWidth/3, centerY + radius/2 + waveHeight);
+            this.ctx.lineTo(centerX + radius - waveWidth*2/3, centerY + radius/2);
+            
+            // Second wave (middle)
+            this.ctx.lineTo(centerX, centerY + radius/2 + waveHeight);
+            
+            // Third wave (left)
+            this.ctx.lineTo(centerX - radius + waveWidth*2/3, centerY + radius/2);
+            this.ctx.lineTo(centerX - radius + waveWidth/3, centerY + radius/2 + waveHeight);
+            
+            // Complete left side
+            this.ctx.lineTo(centerX - radius, centerY + radius/2);
+            
+            this.ctx.closePath();
+            this.ctx.fill();
+            
+            // Draw ghost eyes
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX - radius/2.5, centerY - radius/3, radius/4, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + radius/2.5, centerY - radius/3, radius/4, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw ghost pupils
+            this.ctx.fillStyle = '#000000';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX - radius/2.5, centerY - radius/3, radius/6, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + radius/2.5, centerY - radius/3, radius/6, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+    }
+    
     draw() {
         // Clear canvas
         this.ctx.fillStyle = '#0f0f23';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         this.drawMaze();
+        this.drawGhosts();
         this.drawPlayer();
         
         // Draw game over message
@@ -312,6 +502,7 @@ class PatchGame {
     
     gameLoop() {
         this.updatePlayer();
+        this.updateGhosts();
         this.draw();
         
         setTimeout(() => {

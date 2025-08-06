@@ -109,6 +109,63 @@
             height: auto;
         }
         
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .game-overlay.hidden {
+            display: none;
+        }
+        
+        .overlay-content {
+            text-align: center;
+            color: #fff;
+            padding: 30px;
+            max-width: 80%;
+        }
+        
+        .overlay-title {
+            font-size: 2.5em;
+            color: #00d4aa;
+            margin: 0 0 15px 0;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.8);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .overlay-message {
+            font-size: 1.3em;
+            margin: 0 0 20px 0;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 0, 0, 0.7);
+        }
+        
+        .overlay-instruction {
+            font-size: 1em;
+            color: #ddd;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            animation: pulse 2s infinite;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.6);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
         .mobile-controls {
             display: none;
             margin-top: 20px;
@@ -254,6 +311,18 @@
             .threat-item {
                 font-size: 0.8em;
             }
+            
+            .overlay-title {
+                font-size: 2em;
+            }
+            
+            .overlay-message {
+                font-size: 1.1em;
+            }
+            
+            .overlay-instruction {
+                font-size: 0.9em;
+            }
         }
         
         @media (max-width: 480px) {
@@ -322,6 +391,15 @@
         
         <div class="game-canvas-container">
             <canvas id="gameCanvas" width="600" height="600"></canvas>
+            
+            <!-- Game Over/Win Overlay -->
+            <div id="gameOverlay" class="game-overlay hidden">
+                <div class="overlay-content">
+                    <h2 id="overlayTitle" class="overlay-title"></h2>
+                    <p id="overlayMessage" class="overlay-message"></p>
+                    <p class="overlay-instruction">Press SPACE to restart or tap here</p>
+                </div>
+            </div>
         </div>
         
         <div class="mobile-controls">

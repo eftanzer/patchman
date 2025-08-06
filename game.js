@@ -21,6 +21,11 @@ class PatchGame {
         this.touchEndY = 0;
         this.minSwipeDistance = 30;
         
+        // Overlay elements
+        this.overlay = document.getElementById('gameOverlay');
+        this.overlayTitle = document.getElementById('overlayTitle');
+        this.overlayMessage = document.getElementById('overlayMessage');
+        
         // Load Patch sprite image
         this.patchImage = new Image();
         this.patchImage.src = 'patch_profile.png';
@@ -48,6 +53,7 @@ class PatchGame {
         this.score = 0;
         this.vulnerabilitiesRemaining = 0;
         this.gameRunning = false;
+        this.gameStarted = false; // Track if game has ever been started
         this.gameStartTime = 0;
         this.ghostsVulnerable = false;
         this.vulnerableTimeLeft = 0;
@@ -128,7 +134,42 @@ class PatchGame {
         
         this.init();
         this.setupEventListeners();
+        this.setupOverlayListeners();
         this.gameLoop();
+    }
+    
+    showOverlay(title, message) {
+        this.overlayTitle.textContent = title;
+        this.overlayMessage.textContent = message;
+        this.overlay.classList.remove('hidden');
+    }
+    
+    hideOverlay() {
+        this.overlay.classList.add('hidden');
+    }
+    
+    setupOverlayListeners() {
+        // Spacebar restart from overlay
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !this.overlay.classList.contains('hidden')) {
+                e.preventDefault();
+                this.hideOverlay();
+                this.startGame();
+            }
+        });
+        
+        // Click/tap overlay to restart
+        this.overlay.addEventListener('click', () => {
+            this.hideOverlay();
+            this.startGame();
+        });
+        
+        // Touch support for overlay
+        this.overlay.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.hideOverlay();
+            this.startGame();
+        });
     }
     
     detectMobile() {
@@ -209,7 +250,7 @@ class PatchGame {
     setupEventListeners() {
         // Keyboard controls (desktop)
         document.addEventListener('keydown', (e) => {
-            if (!this.gameRunning && e.code === 'Space') {
+            if (!this.gameStarted && e.code === 'Space') {
                 this.startGame();
                 return;
             }
@@ -288,7 +329,7 @@ class PatchGame {
             if ('PointerEvent' in window) {
                 startButton.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
-                    if (!this.gameRunning) {
+                    if (!this.gameStarted) {
                         this.startGame();
                     }
                 });
@@ -297,14 +338,14 @@ class PatchGame {
             // Touch events
             startButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                if (!this.gameRunning) {
+                if (!this.gameStarted) {
                     this.startGame();
                 }
             });
             
             startButton.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                if (!this.gameRunning) {
+                if (!this.gameStarted) {
                     this.startGame();
                 }
             });
@@ -312,14 +353,14 @@ class PatchGame {
             // Mouse events
             startButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (!this.gameRunning) {
+                if (!this.gameStarted) {
                     this.startGame();
                 }
             });
             
             startButton.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                if (!this.gameRunning) {
+                if (!this.gameStarted) {
                     this.startGame();
                 }
             });
@@ -393,7 +434,9 @@ class PatchGame {
     }
     
     startGame() {
+        this.hideOverlay(); // Hide any visible overlay
         this.gameRunning = true;
+        this.gameStarted = true; // Mark that game has been started
         this.score = 0;
         this.gameStartTime = Date.now();
         
@@ -498,7 +541,7 @@ class PatchGame {
                 if (this.vulnerabilitiesRemaining === 0) {
                     this.gameRunning = false;
                     setTimeout(() => {
-                        alert('Congratulations! All vulnerabilities have been remediated!');
+                        this.showOverlay('🎉 VICTORY! 🎉', 'All vulnerabilities have been remediated!');
                     }, 100);
                 }
             }
@@ -658,7 +701,7 @@ class PatchGame {
                     // Game over
                     this.gameRunning = false;
                     setTimeout(() => {
-                        alert(`Game Over! Patch was caught by ${ghost.name}!`);
+                        this.showOverlay('💀 GAME OVER 💀', `Patch was caught by ${ghost.name}!`);
                     }, 100);
                 }
             }
@@ -841,8 +884,8 @@ class PatchGame {
         this.drawGhosts();
         this.drawPlayer();
         
-        // Draw game over message
-        if (!this.gameRunning && this.vulnerabilitiesRemaining > 0) {
+        // Draw start screen only if game has never been started
+        if (!this.gameStarted) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             
@@ -988,7 +1031,7 @@ function setupGlobalStartButton() {
         if ('PointerEvent' in window) {
             startBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
-                if (!window.patchGame.gameRunning) {
+                if (!window.patchGame.gameStarted) {
                     window.patchGame.startGame();
                 }
             });
@@ -996,14 +1039,14 @@ function setupGlobalStartButton() {
         
         startBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!window.patchGame.gameRunning) {
+            if (!window.patchGame.gameStarted) {
                 window.patchGame.startGame();
             }
         });
         
         startBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            if (!window.patchGame.gameRunning) {
+            if (!window.patchGame.gameStarted) {
                 window.patchGame.startGame();
             }
         });

@@ -64,7 +64,7 @@ class PatchGame {
             {
                 id: 'supply-chain',
                 x: 10, y: 9,  // row 9, column 10
-                direction: 'left',
+                direction: 'up',
                 color: '#ff6b9d',
                 name: 'Supply Chain',
                 moveCounter: 0,
@@ -82,7 +82,7 @@ class PatchGame {
             {
                 id: 'prompt-leakage',
                 x: 11, y: 9,  // row 9, column 11
-                direction: 'down',
+                direction: 'left',
                 color: '#26c6da',
                 name: 'System Prompt Leakage',
                 moveCounter: 0,
@@ -92,7 +92,7 @@ class PatchGame {
         
         // Maze layout (1 = wall, 0 = path, 2 = vulnerability dot, 3 = power-up)
         // Classic Pacman-style maze - smaller and simpler
-        // Central area kept open for future ghost spawn point
+        // Central area kept open for ghost spawn point
         this.maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,3,1],
@@ -180,9 +180,9 @@ class PatchGame {
         
         // Reset ghosts to home positions with staggered activation
         this.ghosts[0].x = 9; this.ghosts[0].y = 9; this.ghosts[0].direction = 'up'; this.ghosts[0].moveCounter = 0;    // row 9, col 9 - 5 seconds
-        this.ghosts[1].x = 10; this.ghosts[1].y = 9; this.ghosts[1].direction = 'left'; this.ghosts[1].moveCounter = 0; // row 9, col 10 - 8 seconds
+        this.ghosts[1].x = 10; this.ghosts[1].y = 9; this.ghosts[1].direction = 'up'; this.ghosts[1].moveCounter = 0; // row 9, col 10 - 8 seconds
         this.ghosts[2].x = 8; this.ghosts[2].y = 9; this.ghosts[2].direction = 'right'; this.ghosts[2].moveCounter = 0; // row 9, col 8 - 11 seconds
-        this.ghosts[3].x = 11; this.ghosts[3].y = 9; this.ghosts[3].direction = 'down'; this.ghosts[3].moveCounter = 0; // row 9, col 11 - 14 seconds
+        this.ghosts[3].x = 11; this.ghosts[3].y = 9; this.ghosts[3].direction = 'left'; this.ghosts[3].moveCounter = 0; // row 9, col 11 - 14 seconds
         
         // Reset maze vulnerabilities to original state
         this.maze = [

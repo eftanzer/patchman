@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PatchMan - Vulnerability Hunter</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background: #1a1a2e;
             color: #fff;
             font-family: 'Courier New', monospace;
@@ -15,22 +19,35 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
         }
         
         .game-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .game-title {
-            font-size: 2.5em;
+            font-size: clamp(1.5em, 5vw, 2.5em);
             color: #00d4aa;
             margin: 0;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: clamp(8px, 3vw, 15px);
+            flex-wrap: wrap;
         }
         
         .patchman-text {
@@ -46,13 +63,13 @@
         }
         
         .patch-logo {
-            width: 50px;
-            height: 50px;
+            width: clamp(30px, 8vw, 50px);
+            height: clamp(30px, 8vw, 50px);
             image-rendering: pixelated;
         }
         
         .game-subtitle {
-            font-size: 1.2em;
+            font-size: clamp(0.8em, 3vw, 1.2em);
             color: #16213e;
             margin: 5px 0;
         }
@@ -60,9 +77,11 @@
         .game-info {
             display: flex;
             justify-content: space-between;
-            width: 600px;
+            width: 100%;
+            max-width: 600px;
             margin-bottom: 10px;
-            font-size: 1.1em;
+            font-size: clamp(0.9em, 2.5vw, 1.1em);
+            padding: 0 10px;
         }
         
         .score {
@@ -73,17 +92,91 @@
             color: #ff6b6b;
         }
         
+        .game-canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: center;
+        }
+        
         #gameCanvas {
             border: 3px solid #00d4aa;
             border-radius: 10px;
             background: #0f0f23;
             box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .mobile-controls {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .control-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 10px;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        
+        .control-btn {
+            background: #00d4aa;
+            border: none;
+            border-radius: 10px;
+            color: #0f0f23;
+            font-size: 1.5em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: #008a6b;
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .control-btn:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+        
+        .control-up { grid-column: 2; grid-row: 1; }
+        .control-left { grid-column: 1; grid-row: 2; }
+        .control-right { grid-column: 3; grid-row: 2; }
+        .control-down { grid-column: 2; grid-row: 3; }
+        
+        .start-btn {
+            grid-column: 2;
+            grid-row: 2;
+            background: #ff6b6b;
+            font-size: 1em;
+        }
+        
+        .start-btn:active {
+            background: #ff4757;
         }
         
         .controls {
-            margin-top: 20px;
+            margin-top: 15px;
             text-align: center;
             color: #888;
+            font-size: clamp(0.8em, 2vw, 1em);
         }
         
         .controls p {
@@ -94,9 +187,10 @@
             margin-top: 15px;
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: clamp(15px, 5vw, 30px);
             flex-wrap: wrap;
-            font-size: 0.9em;
+            font-size: clamp(0.7em, 2vw, 0.9em);
+            padding: 0 10px;
         }
         
         .threat-item {
@@ -104,53 +198,147 @@
             align-items: center;
             gap: 8px;
             color: #ccc;
+            margin: 5px 0;
         }
         
         .ghost-icon {
             width: 16px;
             height: 16px;
         }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .game-header {
+                margin-bottom: 10px;
+            }
+            
+            .game-info {
+                margin-bottom: 5px;
+            }
+            
+            .mobile-controls {
+                display: block;
+            }
+            
+            .controls .desktop-only {
+                display: none;
+            }
+            
+            .threat-legend {
+                gap: 10px;
+                margin-top: 10px;
+            }
+            
+            .threat-item {
+                font-size: 0.8em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .control-pad {
+                width: 180px;
+                height: 180px;
+                gap: 8px;
+            }
+            
+            .control-btn {
+                font-size: 1.3em;
+            }
+            
+            .threat-legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+        }
+        
+        /* Landscape orientation adjustments */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .game-header {
+                margin-bottom: 5px;
+            }
+            
+            .game-title {
+                font-size: clamp(1.2em, 4vh, 2em);
+            }
+            
+            .game-subtitle {
+                font-size: clamp(0.7em, 2.5vh, 1em);
+            }
+            
+            .mobile-controls {
+                margin-top: 10px;
+            }
+            
+            .control-pad {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .threat-legend {
+                margin-top: 5px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="game-header">
-        <h1 class="game-title">
-            <img src="patch_profile.png" alt="Patch" class="patch-logo">
-<span class="patchman-text">PA<span class="tiny-letter">T</span>C<span class="tiny-letter">H</span>MAN</span>
-            <img src="patch_profile.png" alt="Patch" class="patch-logo" style="transform: scaleX(-1);">
-        </h1>
-        <p class="game-subtitle">Vulnerability Hunter</p>
-    </div>
-    
-    <div class="game-info">
-        <div class="score">Score: <span id="scoreValue">0</span></div>
-        <div class="vulnerabilities">Vulnerabilities: <span id="vulnCount">0</span></div>
-    </div>
-    
-    <canvas id="gameCanvas" width="600" height="600"></canvas>
-    
-    <div class="controls">
-        <p>Use ARROW KEYS or WASD to move Patch</p>
-        <p>Collect 🔴 vulnerabilities to remediate them!</p>
-        <p>Avoid the security threats! Press SPACE to start/restart</p>
-    </div>
-    
-    <div class="threat-legend">
-        <div class="threat-item">
-            <canvas class="ghost-icon" data-color="#ff4757"></canvas>
-            <span>Prompt Injection</span>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">
+                <img src="patch_profile.png" alt="Patch" class="patch-logo">
+                <span class="patchman-text">PA<span class="tiny-letter">T</span>C<span class="tiny-letter">H</span>MAN</span>
+                <img src="patch_profile.png" alt="Patch" class="patch-logo" style="transform: scaleX(-1);">
+            </h1>
+            <p class="game-subtitle">Vulnerability Hunter</p>
         </div>
-        <div class="threat-item">
-            <canvas class="ghost-icon" data-color="#ff6b9d"></canvas>
-            <span>Supply Chain</span>
+        
+        <div class="game-info">
+            <div class="score">Score: <span id="scoreValue">0</span></div>
+            <div class="vulnerabilities">Vulnerabilities: <span id="vulnCount">0</span></div>
         </div>
-        <div class="threat-item">
-            <canvas class="ghost-icon" data-color="#ffa726"></canvas>
-            <span>Data & Model Poisoning</span>
+        
+        <div class="game-canvas-container">
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
         </div>
-        <div class="threat-item">
-            <canvas class="ghost-icon" data-color="#26c6da"></canvas>
-            <span>System Prompt Leakage</span>
+        
+        <div class="mobile-controls">
+            <div class="control-pad">
+                <button class="control-btn control-up" data-direction="up">▲</button>
+                <button class="control-btn control-left" data-direction="left">◀</button>
+                <button class="control-btn start-btn" id="startBtn">START</button>
+                <button class="control-btn control-right" data-direction="right">▶</button>
+                <button class="control-btn control-down" data-direction="down">▼</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <p class="desktop-only">Use ARROW KEYS or WASD to move Patch</p>
+            <p class="desktop-only">Press SPACE to start/restart</p>
+            <p>Collect 🔴 vulnerabilities to remediate them!</p>
+            <p>Avoid the security threats!</p>
+        </div>
+        
+        <div class="threat-legend">
+            <div class="threat-item">
+                <canvas class="ghost-icon" data-color="#ff4757"></canvas>
+                <span>Prompt Injection</span>
+            </div>
+            <div class="threat-item">
+                <canvas class="ghost-icon" data-color="#ff6b9d"></canvas>
+                <span>Supply Chain</span>
+            </div>
+            <div class="threat-item">
+                <canvas class="ghost-icon" data-color="#ffa726"></canvas>
+                <span>Data & Model Poisoning</span>
+            </div>
+            <div class="threat-item">
+                <canvas class="ghost-icon" data-color="#26c6da"></canvas>
+                <span>System Prompt Leakage</span>
+            </div>
         </div>
     </div>
     

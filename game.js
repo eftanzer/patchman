@@ -5,10 +5,21 @@ class PatchGame {
         this.scoreElement = document.getElementById('scoreValue');
         this.vulnElement = document.getElementById('vulnCount');
         
+        // Mobile detection and responsive setup
+        this.isMobile = this.detectMobile();
+        this.setupResponsiveCanvas();
+        
         // Game settings
-        this.gridSize = 30;
-        this.rows = this.canvas.height / this.gridSize;
-        this.cols = this.canvas.width / this.gridSize;
+        this.gridSize = this.isMobile ? Math.floor(Math.min(this.canvas.width, this.canvas.height) / 20) : 30;
+        this.rows = Math.floor(this.canvas.height / this.gridSize);
+        this.cols = Math.floor(this.canvas.width / this.gridSize);
+        
+        // Touch controls
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+        this.touchEndX = 0;
+        this.touchEndY = 0;
+        this.minSwipeDistance = 30;
         
         // Load Patch sprite image
         this.patchImage = new Image();
@@ -120,6 +131,34 @@ class PatchGame {
         this.gameLoop();
     }
     
+    detectMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               ('ontouchstart' in window) || 
+               (navigator.maxTouchPoints > 0) ||
+               window.innerWidth <= 768;
+    }
+    
+    setupResponsiveCanvas() {
+        const container = this.canvas.parentElement;
+        const maxWidth = Math.min(600, window.innerWidth - 40);
+        const maxHeight = Math.min(600, window.innerHeight * 0.6);
+        
+        if (this.isMobile) {
+            // For mobile, make canvas smaller to fit screen better
+            const size = Math.min(maxWidth, maxHeight, 400);
+            this.canvas.width = size;
+            this.canvas.height = size;
+        } else {
+            // Desktop size
+            this.canvas.width = 600;
+            this.canvas.height = 600;
+        }
+        
+        // Adjust canvas display size
+        this.canvas.style.width = this.canvas.width + 'px';
+        this.canvas.style.height = this.canvas.height + 'px';
+    }
+    
     init() {
         this.countVulnerabilities();
         this.updateUI();
@@ -137,6 +176,7 @@ class PatchGame {
     }
     
     setupEventListeners() {
+        // Keyboard controls (desktop)
         document.addEventListener('keydown', (e) => {
             if (!this.gameRunning && e.code === 'Space') {
                 this.startGame();
@@ -164,6 +204,119 @@ class PatchGame {
                     break;
             }
         });
+        
+        // Mobile touch controls
+        this.setupMobileControls();
+        this.setupSwipeControls();
+        
+        // Window resize handling
+        window.addEventListener('resize', () => {
+            if (this.isMobile) {
+                this.setupResponsiveCanvas();
+                this.gridSize = Math.floor(Math.min(this.canvas.width, this.canvas.height) / 20);
+                this.rows = Math.floor(this.canvas.height / this.gridSize);
+                this.cols = Math.floor(this.canvas.width / this.gridSize);
+            }
+        });
+    }
+    
+    setupMobileControls() {
+        // Touch control buttons
+        const controlButtons = document.querySelectorAll('[data-direction]');
+        const startButton = document.getElementById('startBtn');
+        
+        controlButtons.forEach(button => {
+            const direction = button.getAttribute('data-direction');
+            
+            // Prevent default touch behavior
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (this.gameRunning) {
+                    this.player.nextDirection = direction;
+                }
+            });
+            
+            // Also support mouse clicks for testing
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.gameRunning) {
+                    this.player.nextDirection = direction;
+                }
+            });
+        });
+        
+        // Start button
+        if (startButton) {
+            startButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!this.gameRunning) {
+                    this.startGame();
+                }
+            });
+            
+            startButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!this.gameRunning) {
+                    this.startGame();
+                }
+            });
+        }
+    }
+    
+    setupSwipeControls() {
+        // Canvas swipe controls
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+        });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!this.gameRunning) return;
+            
+            const touch = e.changedTouches[0];
+            this.touchEndX = touch.clientX;
+            this.touchEndY = touch.clientY;
+            
+            this.handleSwipeGesture();
+        });
+        
+        // Prevent scrolling on touch
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        });
+    }
+    
+    handleSwipeGesture() {
+        const deltaX = this.touchEndX - this.touchStartX;
+        const deltaY = this.touchEndY - this.touchStartY;
+        
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        
+        // Check if swipe is long enough
+        if (Math.max(absX, absY) < this.minSwipeDistance) {
+            return;
+        }
+        
+        // Determine swipe direction
+        if (absX > absY) {
+            // Horizontal swipe
+            if (deltaX > 0) {
+                this.player.nextDirection = 'right';
+            } else {
+                this.player.nextDirection = 'left';
+            }
+        } else {
+            // Vertical swipe
+            if (deltaY > 0) {
+                this.player.nextDirection = 'down';
+            } else {
+                this.player.nextDirection = 'up';
+            }
+        }
     }
     
     startGame() {
@@ -212,7 +365,7 @@ class PatchGame {
     }
     
     canMove(x, y) {
-        if (x < 0 || x >= this.cols || y < 0 || y >= this.rows) {
+        if (x < 0 || x >= this.maze[0].length || y < 0 || y >= this.maze.length) {
             return false;
         }
         return this.maze[y][x] !== 1; // Can move if not a wall
@@ -256,8 +409,8 @@ class PatchGame {
         }
         
         // Handle screen wrapping
-        if (newX < 0) newX = this.cols - 1;
-        if (newX >= this.cols) newX = 0;
+        if (newX < 0) newX = this.maze[0].length - 1;
+        if (newX >= this.maze[0].length) newX = 0;
         
         if (this.canMove(newX, newY)) {
             this.player.x = newX;
@@ -325,8 +478,8 @@ class PatchGame {
                 }
                 
                 // Handle screen wrapping
-                if (newX < 0) newX = this.cols - 1;
-                if (newX >= this.cols) newX = 0;
+                if (newX < 0) newX = this.maze[0].length - 1;
+                if (newX >= this.maze[0].length) newX = 0;
                 
                 if (this.canMove(newX, newY)) {
                     possibleMoves.push({direction: dir, x: newX, y: newY});

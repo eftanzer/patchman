@@ -9,8 +9,8 @@ class PatchGame {
         this.isMobile = this.detectMobile();
         this.setupResponsiveCanvas();
         
-        // Game settings
-        this.gridSize = this.isMobile ? Math.floor(Math.min(this.canvas.width, this.canvas.height) / 20) : 30;
+        // Game settings - maintain better proportions
+        this.calculateGridSize();
         this.rows = Math.floor(this.canvas.height / this.gridSize);
         this.cols = Math.floor(this.canvas.width / this.gridSize);
         
@@ -140,12 +140,26 @@ class PatchGame {
     
     setupResponsiveCanvas() {
         const container = this.canvas.parentElement;
-        const maxWidth = Math.min(600, window.innerWidth - 40);
-        const maxHeight = Math.min(600, window.innerHeight * 0.6);
         
         if (this.isMobile) {
-            // For mobile, make canvas smaller to fit screen better
-            const size = Math.min(maxWidth, maxHeight, 400);
+            // For mobile, calculate optimal size while maintaining good visibility
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const availableWidth = screenWidth - 16; // Account for body padding
+            
+            // Calculate available height more generously
+            // Header (~80px) + game-info (~40px) + controls (~220px) + margins (~60px) = ~400px
+            const uiHeight = 400;
+            const availableHeight = screenHeight - uiHeight;
+            
+            // Use most of the available space, but ensure it's not too small
+            const minSize = Math.min(screenWidth * 0.75, 320);
+            const maxSize = Math.min(availableWidth, 600);
+            const idealSize = Math.min(availableWidth, availableHeight);
+            
+            // Choose size that gives good game experience
+            const size = Math.max(minSize, Math.min(maxSize, idealSize));
+            
             this.canvas.width = size;
             this.canvas.height = size;
         } else {
@@ -157,6 +171,23 @@ class PatchGame {
         // Adjust canvas display size
         this.canvas.style.width = this.canvas.width + 'px';
         this.canvas.style.height = this.canvas.height + 'px';
+    }
+    
+    calculateGridSize() {
+        if (this.isMobile) {
+            // For mobile, ensure grid size maintains good playability
+            // The maze is 20x19, so we need to fit that properly
+            const canvasSize = Math.min(this.canvas.width, this.canvas.height);
+            
+            // Calculate grid size to fit the 20x19 maze with some padding
+            const potentialGridSize = Math.floor(canvasSize / 20);
+            
+            // Ensure minimum grid size for touch friendliness (at least 15px)
+            this.gridSize = Math.max(15, Math.min(potentialGridSize, 35));
+        } else {
+            // Desktop standard grid size
+            this.gridSize = 30;
+        }
     }
     
     init() {
@@ -213,7 +244,7 @@ class PatchGame {
         window.addEventListener('resize', () => {
             if (this.isMobile) {
                 this.setupResponsiveCanvas();
-                this.gridSize = Math.floor(Math.min(this.canvas.width, this.canvas.height) / 20);
+                this.calculateGridSize();
                 this.rows = Math.floor(this.canvas.height / this.gridSize);
                 this.cols = Math.floor(this.canvas.width / this.gridSize);
             }
@@ -224,6 +255,12 @@ class PatchGame {
         // Touch control buttons
         const controlButtons = document.querySelectorAll('[data-direction]');
         const startButton = document.getElementById('startBtn');
+        
+        // Debug info for mobile controls setup
+        if (this.isMobile) {
+            console.log('Setting up mobile controls. Start button found:', !!startButton);
+            console.log('Control buttons found:', controlButtons.length);
+        }
         
         controlButtons.forEach(button => {
             const direction = button.getAttribute('data-direction');
@@ -245,8 +282,19 @@ class PatchGame {
             });
         });
         
-        // Start button
+        // Start button with multiple event types for better compatibility
         if (startButton) {
+            // Modern pointer events (works for both touch and mouse)
+            if ('PointerEvent' in window) {
+                startButton.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    if (!this.gameRunning) {
+                        this.startGame();
+                    }
+                });
+            }
+            
+            // Touch events
             startButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 if (!this.gameRunning) {
@@ -254,12 +302,37 @@ class PatchGame {
                 }
             });
             
+            startButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (!this.gameRunning) {
+                    this.startGame();
+                }
+            });
+            
+            // Mouse events
             startButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (!this.gameRunning) {
                     this.startGame();
                 }
             });
+            
+            startButton.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (!this.gameRunning) {
+                    this.startGame();
+                }
+            });
+            
+            // Add visual feedback
+            startButton.style.cursor = 'pointer';
+            startButton.style.userSelect = 'none';
+            
+        } else {
+            // Start button not found, retry after a short delay
+            setTimeout(() => {
+                this.setupMobileControls();
+            }, 100);
         }
     }
     
@@ -907,8 +980,63 @@ function drawLegendGhosts() {
     });
 }
 
-// Start the game when page loads
-window.addEventListener('load', () => {
+// Global fallback for start button
+function setupGlobalStartButton() {
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn && window.patchGame) {
+        // Modern pointer events (preferred)
+        if ('PointerEvent' in window) {
+            startBtn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                if (!window.patchGame.gameRunning) {
+                    window.patchGame.startGame();
+                }
+            });
+        }
+        
+        startBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!window.patchGame.gameRunning) {
+                window.patchGame.startGame();
+            }
+        });
+        
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!window.patchGame.gameRunning) {
+                window.patchGame.startGame();
+            }
+        });
+        
+        // Make sure button is interactive
+        startBtn.style.cursor = 'pointer';
+        startBtn.style.userSelect = 'none';
+        startBtn.style.webkitUserSelect = 'none';
+        startBtn.style.webkitTouchCallout = 'none';
+    }
+}
+
+// Start the game when page loads - with better DOM readiness handling
+function initializeGame() {
     drawLegendGhosts();
-    new PatchGame();
+    window.patchGame = new PatchGame();
+    
+    // Setup global fallback after a short delay
+    setTimeout(setupGlobalStartButton, 500);
+}
+
+// Try multiple initialization methods for better compatibility
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+    // DOM is already loaded
+    initializeGame();
+}
+
+// Backup initialization on window load
+window.addEventListener('load', () => {
+    // Only initialize if game hasn't been created yet
+    if (!window.patchGame) {
+        initializeGame();
+    }
 });

@@ -113,15 +113,16 @@
             display: none;
             margin-top: 20px;
             width: 100%;
-            max-width: 400px;
+            padding: 0 5%;
         }
         
         .control-pad {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
-            gap: 10px;
-            width: 200px;
+            gap: 12px;
+            width: 90%;
+            max-width: 500px;
             height: 200px;
             margin: 0 auto;
         }
@@ -129,9 +130,9 @@
         .control-btn {
             background: #00d4aa;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: #0f0f23;
-            font-size: 1.5em;
+            font-size: 1.6em;
             font-weight: bold;
             font-family: 'Courier New', monospace;
             cursor: pointer;
@@ -142,6 +143,8 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transition: all 0.1s;
             touch-action: manipulation;
+            min-height: 55px;
+            min-width: 55px;
         }
         
         .control-btn:active {
@@ -170,6 +173,12 @@
         
         .start-btn:active {
             background: #ff4757;
+        }
+        
+        /* Make all directional buttons the same size for consistency */
+        .control-up, .control-down, .control-left, .control-right {
+            padding: 10px;
+            font-size: 1.8em;
         }
         
         .controls {
@@ -213,24 +222,33 @@
             }
             
             .game-header {
-                margin-bottom: 10px;
+                margin-bottom: 8px;
             }
             
             .game-info {
-                margin-bottom: 5px;
+                margin-bottom: 8px;
+            }
+            
+            .game-canvas-container {
+                margin-bottom: 15px;
             }
             
             .mobile-controls {
                 display: block;
+                margin-top: 15px;
             }
             
             .controls .desktop-only {
                 display: none;
             }
             
+            .controls {
+                margin-top: 10px;
+            }
+            
             .threat-legend {
                 gap: 10px;
-                margin-top: 10px;
+                margin-top: 8px;
             }
             
             .threat-item {
@@ -240,13 +258,13 @@
         
         @media (max-width: 480px) {
             .control-pad {
-                width: 180px;
+                width: 92%;
                 height: 180px;
-                gap: 8px;
+                gap: 10px;
             }
             
             .control-btn {
-                font-size: 1.3em;
+                font-size: 1.4em;
             }
             
             .threat-legend {
@@ -275,7 +293,8 @@
             }
             
             .control-pad {
-                width: 150px;
+                width: 85%;
+                max-width: 400px;
                 height: 150px;
             }
             

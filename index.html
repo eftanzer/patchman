@@ -115,14 +115,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
             border-radius: 10px;
             z-index: 10;
             transition: opacity 0.3s ease;
             cursor: pointer;
+            overflow: hidden; /* Ensure content stays within canvas bounds */
         }
         
         .game-overlay.hidden {
@@ -132,8 +133,14 @@
         .overlay-content {
             text-align: center;
             color: #fff;
-            padding: 30px;
-            max-width: 80%;
+            padding: 15px;
+            max-width: 90%;
+            height: 100%;
+            width: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
         
         .overlay-title {
@@ -371,6 +378,143 @@
                 margin-top: 5px;
             }
         }
+
+        /* Unified Overlay Styles */
+        .overlay-game-over {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        
+        .game-over-text {
+            font-size: 1.6em;
+            color: #ff4757;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+        }
+        
+        .caught-by-text {
+            font-size: 0.95em;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        
+        .overlay-instruction {
+            font-size: 0.9em;
+            color: #ddd;
+            font-family: 'Courier New', monospace;
+            animation: pulse 2s infinite;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        /* Leaderboard Styles */
+        .leaderboard-container {
+            max-width: 350px;
+            margin: 0 auto;
+            padding: 10px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .leaderboard-title {
+            text-align: center;
+            color: #00d4aa;
+            font-size: 1.2em;
+            margin: 0 0 8px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .leaderboard-list {
+            background: rgba(0, 15, 35, 0.8);
+            border: 2px solid #00d4aa;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .leaderboard-entry {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px;
+            align-items: center;
+            padding: 5px 3px;
+            border-bottom: 1px solid rgba(0, 212, 170, 0.2);
+            transition: background-color 0.2s;
+            font-size: 0.85em;
+        }
+        
+        .leaderboard-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .leaderboard-entry:hover {
+            background-color: rgba(0, 212, 170, 0.1);
+        }
+        
+        .leaderboard-entry.top-three {
+            background-color: rgba(255, 215, 0, 0.1);
+        }
+        
+        .leaderboard-entry .rank {
+            font-weight: bold;
+            color: #00d4aa;
+            text-align: left;
+        }
+        
+        .leaderboard-entry.top-three .rank {
+            font-size: 1.2em;
+        }
+        
+        .leaderboard-entry .name {
+            color: #fff;
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .leaderboard-entry .score {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        /* Mobile adjustments for overlay */
+        @media (max-width: 768px) {
+            .game-over-text {
+                font-size: 1.3em;
+            }
+            
+            .caught-by-text {
+                font-size: 0.85em;
+            }
+            
+            .overlay-instruction {
+                font-size: 0.8em;
+            }
+            
+            .leaderboard-container {
+                padding: 5px;
+                max-width: 300px;
+            }
+            
+            .leaderboard-title {
+                font-size: 1.0em;
+                margin-bottom: 6px;
+            }
+            
+            .leaderboard-entry {
+                font-size: 0.7em;
+                padding: 2px 2px;
+                grid-template-columns: 35px 1fr 70px;
+            }
+            
+            .overlay-content {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -397,7 +541,6 @@
                 <div class="overlay-content">
                     <h2 id="overlayTitle" class="overlay-title"></h2>
                     <p id="overlayMessage" class="overlay-message"></p>
-                    <p class="overlay-instruction">Press SPACE to restart or tap here</p>
                 </div>
             </div>
         </div>

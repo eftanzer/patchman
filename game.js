@@ -138,10 +138,74 @@ class PatchGame {
         this.gameLoop();
     }
     
-    showOverlay(title, message) {
-        this.overlayTitle.textContent = title;
-        this.overlayMessage.textContent = message;
+    showOverlay(title, message, useCustomContent = false) {
+        if (useCustomContent) {
+            // For custom HTML content
+            this.overlayTitle.innerHTML = title;
+            this.overlayMessage.innerHTML = message;
+        } else {
+            // For simple text content
+            this.overlayTitle.textContent = title;
+            this.overlayMessage.textContent = message;
+        }
         this.overlay.classList.remove('hidden');
+    }
+    
+    // Generate unified overlay content with mock leaderboard
+    generateUnifiedOverlay(gameOverText = null, caughtByGhost = null) {
+        const gameOverSection = gameOverText ? `
+            <div class="overlay-game-over">
+                <div class="game-over-text">${gameOverText}</div>
+                ${caughtByGhost ? `<div class="caught-by-text">Patchman was caught by ${caughtByGhost}!</div>` : ''}
+            </div>
+        ` : '';
+        
+        // Show instruction text only on start screen or on desktop for game over
+        const showInstruction = !gameOverText; // Only show on start screen, not game over
+        const instructionSection = showInstruction ? `
+            <div class="overlay-instruction">Press SPACE to start hunting!</div>
+        ` : '';
+        
+        const mockLeaderboard = this.generateMockLeaderboard();
+        
+        return `
+            ${gameOverSection}
+            ${instructionSection}
+            ${mockLeaderboard}
+        `;
+    }
+    
+    // Generate mock leaderboard HTML
+    generateMockLeaderboard() {
+        const mockScores = [
+            { rank: 1, name: "ALICE", score: 8420, medal: "🥇" },
+            { rank: 2, name: "BOB", score: 7850, medal: "🥈" },
+            { rank: 3, name: "CAROL", score: 6990, medal: "🥉" },
+            { rank: 4, name: "DAVE", score: 6540, medal: "" },
+            { rank: 5, name: "EVE", score: 5920, medal: "" },
+            { rank: 6, name: "FRANK", score: 5340, medal: "" },
+            { rank: 7, name: "GRACE", score: 4760, medal: "" },
+            { rank: 8, name: "HENRY", score: 4180, medal: "" },
+            { rank: 9, name: "IVY", score: 3600, medal: "" },
+            { rank: 10, name: "JACK", score: 3020, medal: "" }
+        ];
+        
+        const leaderboardEntries = mockScores.map(score => `
+            <div class="leaderboard-entry ${score.rank <= 3 ? 'top-three' : ''}">
+                <span class="rank">${score.medal || `#${score.rank}`}</span>
+                <span class="name">${score.name}</span>
+                <span class="score">${score.score.toLocaleString()}</span>
+            </div>
+        `).join('');
+        
+        return `
+            <div class="leaderboard-container">
+                <h3 class="leaderboard-title">🏆 LEADERBOARD 🏆</h3>
+                <div class="leaderboard-list">
+                    ${leaderboardEntries}
+                </div>
+            </div>
+        `;
     }
     
     hideOverlay() {
@@ -541,8 +605,9 @@ class PatchGame {
                 if (this.vulnerabilitiesRemaining === 0) {
                     this.gameRunning = false;
                     setTimeout(() => {
-                        this.showOverlay('🎉 VICTORY! 🎉', 'All vulnerabilities have been remediated!');
-                    }, 100);
+                        const overlayContent = this.generateUnifiedOverlay('🎉 VICTORY! 🎉');
+                        this.showOverlay('', overlayContent, true);
+                    }, 150);
                 }
             }
             
@@ -704,8 +769,9 @@ class PatchGame {
                     // Game over
                     this.gameRunning = false;
                     setTimeout(() => {
-                        this.showOverlay('💀 GAME OVER 💀', `Patch was caught by ${ghost.name}!`);
-                    }, 100);
+                        const overlayContent = this.generateUnifiedOverlay('💀 GAME OVER 💀', ghost.name);
+                        this.showOverlay('', overlayContent, true);
+                    }, 150);
                 }
             }
         });
@@ -887,63 +953,10 @@ class PatchGame {
         this.drawGhosts();
         this.drawPlayer();
         
-        // Draw start screen only if game has never been started
-        if (!this.gameStarted) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            this.ctx.fillStyle = '#00d4aa';
-            this.ctx.textAlign = 'center';
-            
-            // Draw "SNYK PA" in large font
-            this.ctx.font = '36px Courier New';
-            const largeText = 'SNYK PA';
-            const largeTextWidth = this.ctx.measureText(largeText).width;
-            
-            // Draw "T" in tiny font
-            this.ctx.font = '12px Courier New';
-            const tinyT = 'T';
-            const tinyTWidth = this.ctx.measureText(tinyT).width;
-            
-            // Draw "C" in large font
-            this.ctx.font = '36px Courier New';
-            const midText = 'C';
-            const midTextWidth = this.ctx.measureText(midText).width;
-            
-            // Draw "H" in tiny font  
-            this.ctx.font = '12px Courier New';
-            const tinyH = 'H';
-            const tinyHWidth = this.ctx.measureText(tinyH).width;
-            
-            // Draw "MAN" in large font
-            this.ctx.font = '36px Courier New';
-            const endText = 'MAN';
-            const endTextWidth = this.ctx.measureText(endText).width;
-            
-            // Calculate total width for centering
-            const totalWidth = largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth + endTextWidth;
-            const startX = this.canvas.width/2 - totalWidth/2;
-            
-            // Draw each part
-            this.ctx.font = '36px Courier New';
-            this.ctx.fillText(largeText, startX + largeTextWidth/2, this.canvas.height/2 - 40);
-            
-            this.ctx.font = '12px Courier New';
-            this.ctx.fillText(tinyT, startX + largeTextWidth + tinyTWidth/2, this.canvas.height/2 - 35);
-            
-            this.ctx.font = '36px Courier New';
-            this.ctx.fillText(midText, startX + largeTextWidth + tinyTWidth + midTextWidth/2, this.canvas.height/2 - 40);
-            
-            this.ctx.font = '12px Courier New';
-            this.ctx.fillText(tinyH, startX + largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth/2, this.canvas.height/2 - 35);
-            
-            this.ctx.font = '36px Courier New';
-            this.ctx.fillText(endText, startX + largeTextWidth + tinyTWidth + midTextWidth + tinyHWidth + endTextWidth/2, this.canvas.height/2 - 40);
-            
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '18px Courier New';
-            this.ctx.fillText('Vulnerability Hunter', this.canvas.width/2, this.canvas.height/2 - 10);
-            this.ctx.fillText('Press SPACE to start hunting!', this.canvas.width/2, this.canvas.height/2 + 20);
+        // Show start screen overlay if game has never been started
+        if (!this.gameStarted && this.overlay.classList.contains('hidden')) {
+            const overlayContent = this.generateUnifiedOverlay();
+            this.showOverlay('', overlayContent, true);
         }
     }
     

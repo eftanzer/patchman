@@ -691,6 +691,9 @@ class PatchGame {
     }
     
     checkGhostCollisions() {
+        // Don't check collisions if game is already over
+        if (!this.gameRunning) return;
+        
         this.ghosts.forEach(ghost => {
             if (ghost.x === this.player.x && ghost.y === this.player.y && !ghost.eaten) {
                 if (this.ghostsVulnerable) {
@@ -947,6 +950,8 @@ class PatchGame {
     gameLoop() {
         this.updatePlayer();
         this.updateGhosts();
+        // Check collisions again after ghost movement to catch timing gaps
+        this.checkGhostCollisions();
         this.updatePowerUpTimer();
         this.draw();
         

@@ -173,69 +173,74 @@
             padding: 0 5%;
         }
         
-        .control-pad {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            gap: 12px;
-            width: 90%;
+        .controls-wrapper {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
             max-width: 500px;
-            height: 200px;
             margin: 0 auto;
+            gap: 30px;
         }
         
-        .control-btn {
+        .joystick-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        .joystick-base {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 212, 170, 0.2);
+            border: 3px solid #00d4aa;
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .joystick-handle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             background: #00d4aa;
+            border: 3px solid #008a6b;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out;
+            cursor: pointer;
+        }
+        
+        .joystick-handle.active {
+            background: #008a6b;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        .start-btn {
+            background: #ff6b6b;
             border: none;
             border-radius: 12px;
-            color: #0f0f23;
-            font-size: 1.6em;
+            color: #fff;
+            font-size: 1.2em;
             font-weight: bold;
             font-family: 'Courier New', monospace;
+            padding: 15px 30px;
             cursor: pointer;
             user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transition: all 0.1s;
             touch-action: manipulation;
-            min-height: 55px;
-            min-width: 55px;
-        }
-        
-        .control-btn:active {
-            background: #008a6b;
-            transform: scale(0.95);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .control-btn:disabled {
-            background: #555;
-            color: #888;
-            cursor: not-allowed;
-        }
-        
-        .control-up { grid-column: 2; grid-row: 1; }
-        .control-left { grid-column: 1; grid-row: 2; }
-        .control-right { grid-column: 3; grid-row: 2; }
-        .control-down { grid-column: 2; grid-row: 3; }
-        
-        .start-btn {
-            grid-column: 2;
-            grid-row: 2;
-            background: #ff6b6b;
-            font-size: 1em;
         }
         
         .start-btn:active {
             background: #ff4757;
-        }
-        
-        /* Make all directional buttons the same size for consistency */
-        .control-up, .control-down, .control-left, .control-right {
-            padding: 10px;
-            font-size: 1.8em;
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .controls {
@@ -326,14 +331,23 @@
         }
         
         @media (max-width: 480px) {
-            .control-pad {
-                width: 92%;
-                height: 180px;
-                gap: 10px;
+            .joystick-container {
+                width: 120px;
+                height: 120px;
             }
             
-            .control-btn {
-                font-size: 1.4em;
+            .joystick-handle {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .start-btn {
+                font-size: 1em;
+                padding: 12px 24px;
+            }
+            
+            .controls-wrapper {
+                gap: 20px;
             }
             
             .threat-legend {
@@ -361,10 +375,23 @@
                 margin-top: 10px;
             }
             
-            .control-pad {
-                width: 85%;
-                max-width: 400px;
-                height: 150px;
+            .joystick-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-handle {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .start-btn {
+                font-size: 0.9em;
+                padding: 10px 20px;
+            }
+            
+            .controls-wrapper {
+                gap: 15px;
             }
             
             .threat-legend {
@@ -403,12 +430,12 @@
         </div>
         
         <div class="mobile-controls">
-            <div class="control-pad">
-                <button class="control-btn control-up" data-direction="up">▲</button>
-                <button class="control-btn control-left" data-direction="left">◀</button>
-                <button class="control-btn start-btn" id="startBtn">START</button>
-                <button class="control-btn control-right" data-direction="right">▶</button>
-                <button class="control-btn control-down" data-direction="down">▼</button>
+            <div class="controls-wrapper">
+                <div class="joystick-container" id="joystickContainer">
+                    <div class="joystick-base"></div>
+                    <div class="joystick-handle" id="joystickHandle"></div>
+                </div>
+                <button class="start-btn" id="startBtn">START</button>
             </div>
         </div>
         

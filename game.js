@@ -27,6 +27,7 @@ class PatchGame {
         this.joystickCenterY = 0;
         this.joystickRadius = 0;
         this.currentDirection = null;
+        this.touchStartedOnJoystick = false;
         
         // Overlay elements
         this.overlay = document.getElementById('gameOverlay');
@@ -319,44 +320,57 @@ class PatchGame {
             
             // Touch start
             const handleStart = (e) => {
-                e.preventDefault();
-                if (!this.gameRunning) return;
-                
-                this.joystickActive = true;
-                joystickHandle.classList.add('active');
-                
+                // Check if touch started on joystick container or handle
                 const touch = e.touches ? e.touches[0] : e;
-                updateJoystickBounds();
-                this.updateJoystickPosition(touch.clientX, touch.clientY, joystickHandle);
+                const rect = joystickContainer.getBoundingClientRect();
+                const touchX = touch.clientX;
+                const touchY = touch.clientY;
+                
+                // Check if touch is within joystick bounds
+                if (touchX >= rect.left && touchX <= rect.right && 
+                    touchY >= rect.top && touchY <= rect.bottom) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.touchStartedOnJoystick = true;
+                    
+                    this.joystickActive = true;
+                    joystickHandle.classList.add('active');
+                    
+                    updateJoystickBounds();
+                    this.updateJoystickPosition(touch.clientX, touch.clientY, joystickHandle);
+                }
             };
             
-            // Touch move
+            // Touch move - use document level to catch moves outside container
             const handleMove = (e) => {
-                if (!this.joystickActive) return;
+                if (!this.joystickActive || !this.touchStartedOnJoystick) return;
                 e.preventDefault();
+                e.stopPropagation();
                 
                 const touch = e.touches ? e.touches[0] : e;
                 this.updateJoystickPosition(touch.clientX, touch.clientY, joystickHandle);
             };
             
-            // Touch end
+            // Touch end - use document level to catch releases outside container
             const handleEnd = (e) => {
-                if (!this.joystickActive) return;
+                if (!this.joystickActive || !this.touchStartedOnJoystick) return;
                 e.preventDefault();
+                e.stopPropagation();
                 
                 this.joystickActive = false;
                 this.currentDirection = null;
+                this.touchStartedOnJoystick = false;
                 joystickHandle.classList.remove('active');
                 
                 // Reset joystick to center
                 joystickHandle.style.transform = 'translate(-50%, -50%)';
             };
             
-            // Add event listeners
-            joystickContainer.addEventListener('touchstart', handleStart);
-            joystickContainer.addEventListener('touchmove', handleMove);
-            joystickContainer.addEventListener('touchend', handleEnd);
-            joystickContainer.addEventListener('touchcancel', handleEnd);
+            // Add event listeners - use document level for move/end to handle touches that leave container
+            joystickContainer.addEventListener('touchstart', handleStart, { passive: false });
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('touchend', handleEnd, { passive: false });
+            document.addEventListener('touchcancel', handleEnd, { passive: false });
             
             // Also support mouse for testing
             joystickContainer.addEventListener('mousedown', handleStart);
@@ -455,7 +469,12 @@ class PatchGame {
         // Update player direction if changed
         if (direction !== this.currentDirection && direction !== null) {
             this.currentDirection = direction;
+            // Allow joystick to queue direction even when game isn't running
+            // This way it will take effect as soon as game starts
             if (this.gameRunning) {
+                this.player.nextDirection = direction;
+            } else if (!this.gameStarted) {
+                // Queue the direction for when game starts
                 this.player.nextDirection = direction;
             }
         }
@@ -527,6 +546,7 @@ class PatchGame {
         // Reset joystick
         this.joystickActive = false;
         this.currentDirection = null;
+        this.touchStartedOnJoystick = false;
         const joystickHandle = document.getElementById('joystickHandle');
         if (joystickHandle) {
             joystickHandle.classList.remove('active');

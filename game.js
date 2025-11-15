@@ -21,6 +21,13 @@ class PatchGame {
         this.touchEndY = 0;
         this.minSwipeDistance = 30;
         
+        // Joystick controls
+        this.joystickActive = false;
+        this.joystickCenterX = 0;
+        this.joystickCenterY = 0;
+        this.joystickRadius = 0;
+        this.currentDirection = null;
+        
         // Overlay elements
         this.overlay = document.getElementById('gameOverlay');
         this.overlayTitle = document.getElementById('overlayTitle');
@@ -293,35 +300,69 @@ class PatchGame {
     }
     
     setupMobileControls() {
-        // Touch control buttons
-        const controlButtons = document.querySelectorAll('[data-direction]');
+        // Setup joystick controls
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickHandle = document.getElementById('joystickHandle');
         const startButton = document.getElementById('startBtn');
         
-        // Debug info for mobile controls setup
-        if (this.isMobile) {
-            console.log('Setting up mobile controls. Start button found:', !!startButton);
-            console.log('Control buttons found:', controlButtons.length);
+        if (this.isMobile && joystickContainer && joystickHandle) {
+            // Calculate joystick center and radius
+            const updateJoystickBounds = () => {
+                const rect = joystickContainer.getBoundingClientRect();
+                this.joystickCenterX = rect.left + rect.width / 2;
+                this.joystickCenterY = rect.top + rect.height / 2;
+                this.joystickRadius = rect.width / 2 - 30; // Leave some margin for handle
+            };
+            
+            updateJoystickBounds();
+            window.addEventListener('resize', updateJoystickBounds);
+            
+            // Touch start
+            const handleStart = (e) => {
+                e.preventDefault();
+                if (!this.gameRunning) return;
+                
+                this.joystickActive = true;
+                joystickHandle.classList.add('active');
+                
+                const touch = e.touches ? e.touches[0] : e;
+                updateJoystickBounds();
+                this.updateJoystickPosition(touch.clientX, touch.clientY, joystickHandle);
+            };
+            
+            // Touch move
+            const handleMove = (e) => {
+                if (!this.joystickActive) return;
+                e.preventDefault();
+                
+                const touch = e.touches ? e.touches[0] : e;
+                this.updateJoystickPosition(touch.clientX, touch.clientY, joystickHandle);
+            };
+            
+            // Touch end
+            const handleEnd = (e) => {
+                if (!this.joystickActive) return;
+                e.preventDefault();
+                
+                this.joystickActive = false;
+                this.currentDirection = null;
+                joystickHandle.classList.remove('active');
+                
+                // Reset joystick to center
+                joystickHandle.style.transform = 'translate(-50%, -50%)';
+            };
+            
+            // Add event listeners
+            joystickContainer.addEventListener('touchstart', handleStart);
+            joystickContainer.addEventListener('touchmove', handleMove);
+            joystickContainer.addEventListener('touchend', handleEnd);
+            joystickContainer.addEventListener('touchcancel', handleEnd);
+            
+            // Also support mouse for testing
+            joystickContainer.addEventListener('mousedown', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
         }
-        
-        controlButtons.forEach(button => {
-            const direction = button.getAttribute('data-direction');
-            
-            // Prevent default touch behavior
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (this.gameRunning) {
-                    this.player.nextDirection = direction;
-                }
-            });
-            
-            // Also support mouse clicks for testing
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (this.gameRunning) {
-                    this.player.nextDirection = direction;
-                }
-            });
-        });
         
         // Start button with multiple event types for better compatibility
         if (startButton) {
@@ -374,6 +415,49 @@ class PatchGame {
             setTimeout(() => {
                 this.setupMobileControls();
             }, 100);
+        }
+    }
+    
+    updateJoystickPosition(clientX, clientY, handle) {
+        // Calculate distance from center
+        const deltaX = clientX - this.joystickCenterX;
+        const deltaY = clientY - this.joystickCenterY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Limit to joystick radius
+        const limitedDistance = Math.min(distance, this.joystickRadius);
+        const angle = Math.atan2(deltaY, deltaX);
+        
+        // Calculate new position
+        const newX = Math.cos(angle) * limitedDistance;
+        const newY = Math.sin(angle) * limitedDistance;
+        
+        // Update handle position
+        handle.style.transform = `translate(calc(-50% + ${newX}px), calc(-50% + ${newY}px))`;
+        
+        // Determine direction based on angle
+        // Use 45-degree sectors for up/down/left/right
+        let direction = null;
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        
+        // Only set direction if moved far enough (dead zone)
+        if (limitedDistance > 20) {
+            if (absX > absY) {
+                // Horizontal movement
+                direction = deltaX > 0 ? 'right' : 'left';
+            } else {
+                // Vertical movement
+                direction = deltaY > 0 ? 'down' : 'up';
+            }
+        }
+        
+        // Update player direction if changed
+        if (direction !== this.currentDirection && direction !== null) {
+            this.currentDirection = direction;
+            if (this.gameRunning) {
+                this.player.nextDirection = direction;
+            }
         }
     }
     
@@ -439,6 +523,15 @@ class PatchGame {
         this.gameStarted = true; // Mark that game has been started
         this.score = 0;
         this.gameStartTime = Date.now();
+        
+        // Reset joystick
+        this.joystickActive = false;
+        this.currentDirection = null;
+        const joystickHandle = document.getElementById('joystickHandle');
+        if (joystickHandle) {
+            joystickHandle.classList.remove('active');
+            joystickHandle.style.transform = 'translate(-50%, -50%)';
+        }
         
         // Reset player
         this.player.x = 1;
